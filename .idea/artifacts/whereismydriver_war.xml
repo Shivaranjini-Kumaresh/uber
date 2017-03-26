@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="whereismydriver:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="cabservice.war">
+      <element id="artifact" artifact-name="whereismydriver:war exploded" />
+    </root>
+  </artifact>
+</component>
