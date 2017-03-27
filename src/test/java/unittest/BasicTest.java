@@ -53,6 +53,6 @@ public class BasicTest {
     @AfterClass
     public static void cleanup()
     {
-        jedis.del(key);
+        //locationService.cleanUp(key);
     }
 }

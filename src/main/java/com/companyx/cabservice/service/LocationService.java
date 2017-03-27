@@ -17,7 +17,7 @@ public class LocationService {
 
     String redisHost = "127.0.0.1";
     Integer redisPort = 6379;
-    String key = "DriverLocation";
+    String key = "DriverLocation2";
     JedisPool pool = null;
 
     public LocationService()
@@ -28,6 +28,8 @@ public class LocationService {
     {
         pool = new JedisPool(redisHost, redisPort);
         this.key = key;
+
+        initializeTestData();
     }
     public void updateLocation(DriverLocation dl)
     {
@@ -49,14 +51,14 @@ public class LocationService {
         }
     }
 
-    public List<DriverLocation> getLocations(double longitude, double latitude, int distance)
+    public List<DriverLocation> getLocations(double longitude, double latitude, double radius)
     {
         List<DriverLocation> result = new ArrayList<>();
         Jedis jedis = null;
         try
         {
             jedis = pool.getResource();
-            List<GeoRadiusResponse> members = jedis.georadius(key, longitude, latitude, distance, GeoUnit.M, GeoRadiusParam.geoRadiusParam().withCoord().withDist());
+            List<GeoRadiusResponse> members = jedis.georadius(key, longitude, latitude, radius, GeoUnit.M, GeoRadiusParam.geoRadiusParam().withCoord().withDist());
 
             for(GeoRadiusResponse geoRadiusResponse : members)
             {
@@ -85,6 +87,21 @@ public class LocationService {
         jedis.del(key);
         jedis.close();
 
+    }
+
+    private void initializeTestData()
+    {
+        DriverLocation dl1 = new DriverLocation();
+        dl1.setDriverId("1");
+        dl1.setLongitude(77.733197);
+        dl1.setLatitude(12.994827);
+        this.updateLocation(dl1);
+
+        DriverLocation dl2 = new DriverLocation();
+        dl1.setDriverId("2");
+        dl1.setLongitude(77.73401);
+        dl1.setLatitude(12.996837);
+        this.updateLocation(dl1);
     }
 
 }
