@@ -1,5 +1,7 @@
 package performance.data;
 
+import com.companyx.cabservice.resource.DriverLocation;
+import com.companyx.cabservice.service.LocationService;
 import redis.clients.jedis.GeoRadiusResponse;
 import redis.clients.jedis.GeoUnit;
 import redis.clients.jedis.Jedis;
@@ -14,18 +16,16 @@ import java.util.concurrent.CountDownLatch;
 
 public class WorkerThread implements Runnable{
 
-    private JedisPool jedisPool;
-    private String key;
+    LocationService ls;
     double longitude;
     double lattitude;
     String driverId;
     int iterationCount;
     CountDownLatch countDownLatch;
 
-    public WorkerThread(JedisPool jedisPool, String key, double longitude, double lattitude, String driverId, int iterationCount, CountDownLatch countDownLatch)
+    public WorkerThread(LocationService ls, double longitude, double lattitude, String driverId, int iterationCount, CountDownLatch countDownLatch)
     {
-        this.jedisPool = jedisPool;
-        this.key = key;
+        this.ls = ls;
         this.longitude = longitude;
         this.lattitude = lattitude;
         this.driverId = driverId;
@@ -39,17 +39,14 @@ public class WorkerThread implements Runnable{
         long sTime = System.currentTimeMillis();
         for(int c = 0; c < iterationCount; c++)
         {
-            //Update location
-            Jedis jedis = jedisPool.getResource();
-            jedis.geoadd(key, longitude, lattitude, driverId);
-            jedis.close();
+            DriverLocation dl = new DriverLocation();
+            dl.setDriverId(""+c);
+            dl.setLongitude(longitude);
+            dl.setLatitude(lattitude);
+            ls.updateLocation(dl);
 
-            //Query
-            jedis = jedisPool.getResource();
-            List<GeoRadiusResponse> members = jedis.georadius(key, longitude, lattitude, 500, GeoUnit.M);
-            jedis.close();
-            //System.out.println("Result size:" + members.size());
-
+            List<DriverLocation> result = ls.getLocations(longitude, lattitude, 500);
+            //System.out.println("Result size:" + result.size());
         }
 
         countDownLatch.countDown();

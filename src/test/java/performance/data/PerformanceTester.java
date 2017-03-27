@@ -3,6 +3,8 @@ package performance.data;
 /**
  * Created by sr250345 on 3/25/17.
  */
+import com.companyx.cabservice.resource.DriverLocation;
+import com.companyx.cabservice.service.LocationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -29,16 +31,17 @@ public class PerformanceTester {
 
     private static String key = "bangalore-locations";
     private static int threadCount = 20;
-    private static int iterationCount = 10000;
+    private static int iterationCount = 1000;
+
+    static LocationService locationService;
 
     public static void main(String[] args) throws  Exception{
 
-
-        JedisPool pool = init();
+        locationService = new LocationService(key);
         System.out.println(" Initialization complete");
 
         System.out.println(" Creating test data");
-        initData(pool.getResource(), key);
+        initData(locationService);
 
         Executor executor   = Executors.newFixedThreadPool(threadCount);
         CountDownLatch countDownLatch = new CountDownLatch(threadCount);
@@ -67,41 +70,26 @@ public class PerformanceTester {
 
         for(int c = 1; c <= threadCount; c++)
         {
-            Runnable r = new WorkerThread(pool, key,  inputDataMap.get(""+c).getLongitude(), inputDataMap.get(""+c).getLatitude(),
+            Runnable r = new WorkerThread(locationService,  inputDataMap.get(""+c).getLongitude(), inputDataMap.get(""+c).getLatitude(),
                                             ""+c, iterationCount, countDownLatch);
             executor.execute(r);
         }
 
         countDownLatch.await();
 
-        //queryData(jedis, key);
-
         System.out.println(" Cleaning up");
-        cleanUp(pool.getResource(), key);
+        locationService.cleanUp(key);
         System.out.println(" Cleanup done");
 
         System.exit(1);
     }
-    private static JedisPool init()
-    {
-        String redisHost = "127.0.0.1";
-        Integer redisPort = 6379;
-
-        //the jedis connection pool..
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxTotal(100);
-        JedisPool pool = new JedisPool(redisHost, redisPort);
-        return pool;
-
-    }
-    private static void initData(Jedis jedis, String key) throws Exception
+    private static void initData(LocationService ls) throws Exception
     {
         FileInputStream fis = new FileInputStream(new File("/Users/SR250345/Documents/siddharth/personal/whereismydriver/bangalore-location-data.txt"));
         FeatureCollection featureCollection =
                 new ObjectMapper().readValue(fis, FeatureCollection.class);
 
         Iterator<org.geojson.Feature> iterator = featureCollection.iterator();
-        //Map<String, GeoCoordinate> coordinateMap = new HashMap<String, GeoCoordinate>();
         int c = 0;
         while(iterator.hasNext())
         {
@@ -113,25 +101,14 @@ public class PerformanceTester {
             for(LngLatAlt lngLatAlt : coordinates)
             {
                 ++c;
-                //System.out.println("Adding: " + lngLatAlt.getLongitude() + "," + lngLatAlt.getLatitude());
-                jedis.geoadd(key, lngLatAlt.getLongitude(), lngLatAlt.getLatitude(), "" + c);
+                DriverLocation dl = new DriverLocation();
+                dl.setDriverId(""+c);
+                dl.setLongitude(lngLatAlt.getLongitude());
+                dl.setLatitude(lngLatAlt.getLatitude());
+                ls.updateLocation(dl);
             }
         }
 
         System.out.println(c + " location records created");
     }
-    private static void queryData(Jedis jedis, String key)
-    {
-        long startTime = System.currentTimeMillis();
-        List<GeoRadiusResponse> members = jedis.georadius(key, 77.55105,12.840131, 10, GeoUnit.KM);
-        long endTime = System.currentTimeMillis();
-        System.out.println("Querying...");
-        System.out.println("Result size:" + members.size() + " time taken: " + (endTime-startTime) + "Ms");
-    }
-    private static void cleanUp(Jedis jedis, String key)
-    {
-        jedis.del(key);
-    }
-
-
 }
