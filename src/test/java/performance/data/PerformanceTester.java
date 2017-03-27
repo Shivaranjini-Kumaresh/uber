@@ -5,14 +5,7 @@ package performance.data;
  */
 import com.companyx.cabservice.resource.DriverLocation;
 import com.companyx.cabservice.service.LocationService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import org.geojson.*;
-import org.geojson.Feature;
-import org.geojson.Geometry;
 import redis.clients.jedis.*;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -29,7 +22,7 @@ import java.util.concurrent.Executors;
 
 public class PerformanceTester {
 
-    private static String key = "bangalore-locations";
+    private static String key = "perf-test-key";
     private static int threadCount = 20;
     private static int iterationCount = 1000;
 
@@ -40,7 +33,7 @@ public class PerformanceTester {
         locationService = new LocationService(key);
         System.out.println(" Initialization complete");
 
-        System.out.println(" Creating test data");
+        System.out.println(" Creating test data. 50,000 records");
         initData(locationService);
 
         Executor executor   = Executors.newFixedThreadPool(threadCount);
@@ -85,30 +78,8 @@ public class PerformanceTester {
     }
     private static void initData(LocationService ls) throws Exception
     {
-        FileInputStream fis = new FileInputStream(new File("/Users/SR250345/Documents/siddharth/personal/whereismydriver/bangalore-location-data.txt"));
-        FeatureCollection featureCollection =
-                new ObjectMapper().readValue(fis, FeatureCollection.class);
+        String filePath = "/Users/SR250345/Documents/siddharth/personal/whereismydriver/uk_pastalcode_ locations.xlsx";
+        TestDataPopulator.populateTestData(filePath, ls);
 
-        Iterator<org.geojson.Feature> iterator = featureCollection.iterator();
-        int c = 0;
-        while(iterator.hasNext())
-        {
-            Feature f = iterator.next();
-            Object pincode = f.getProperties().get("pincode");
-            Geometry geometry = (Geometry)f.getGeometry();
-            List coordinatesP = geometry.getCoordinates();
-            List<LngLatAlt> coordinates = (List)coordinatesP.get(0);
-            for(LngLatAlt lngLatAlt : coordinates)
-            {
-                ++c;
-                DriverLocation dl = new DriverLocation();
-                dl.setDriverId(""+c);
-                dl.setLongitude(lngLatAlt.getLongitude());
-                dl.setLatitude(lngLatAlt.getLatitude());
-                ls.updateLocation(dl);
-            }
-        }
-
-        System.out.println(c + " location records created");
     }
 }

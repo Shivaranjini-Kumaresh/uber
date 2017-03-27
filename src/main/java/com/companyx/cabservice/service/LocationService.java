@@ -1,13 +1,24 @@
 package com.companyx.cabservice.service;
 
 import com.companyx.cabservice.resource.DriverLocation;
+import com.companyx.cabservice.rest.LocationServiceV1;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.GeoRadiusResponse;
 import redis.clients.jedis.GeoUnit;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.params.geo.GeoRadiusParam;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -15,21 +26,25 @@ import java.util.List;
  */
 public class LocationService {
 
+    //Todo - push into config file
     String redisHost = "127.0.0.1";
     Integer redisPort = 6379;
-    String key = "DriverLocation2";
+
+    String key = "DriverLocation";
     JedisPool pool = null;
+
+    private static final Logger logger = LoggerFactory.getLogger(LocationService.class);
 
     public LocationService()
     {
         pool = new JedisPool(redisHost, redisPort);
+        logger.info("Connection pool initialized");
     }
     public LocationService(String key)
     {
         pool = new JedisPool(redisHost, redisPort);
         this.key = key;
-
-        initializeTestData();
+        logger.info("Connection pool initialized with key " + key);
     }
     public void updateLocation(DriverLocation dl)
     {
@@ -39,11 +54,9 @@ public class LocationService {
             jedis = pool.getResource();
             long response = jedis.geoadd(key, dl.getLongitude(), dl.getLatitude(), dl.getDriverId());
 
-
         }catch(Exception e)
         {
-            //log
-
+            logger.error(e.getMessage(), e);
         }
         finally
         {
@@ -70,10 +83,10 @@ public class LocationService {
 
                 result.add(dl);
             }
+            logger.info("Result size : " + result.size());
         }catch(Exception e)
         {
-            //log
-            e.printStackTrace();
+            logger.error(e.getMessage(), e);
         }
         finally
         {
@@ -88,8 +101,7 @@ public class LocationService {
         jedis.close();
 
     }
-
-    private void initializeTestData()
+    private void populateSmallTestData()
     {
         DriverLocation dl1 = new DriverLocation();
         dl1.setDriverId("1");
@@ -102,6 +114,57 @@ public class LocationService {
         dl1.setLongitude(77.73401);
         dl1.setLatitude(12.996837);
         this.updateLocation(dl1);
+    }
+    //Just for test purpose
+    public  void populateBigTestData()
+    {
+        String filePath = "/Users/SR250345/Documents/siddharth/personal/whereismydriver/uk_pastalcode_ locations.xlsx";
+
+        int recordCounter = 0;
+        try
+        {
+            FileInputStream excelFile = new FileInputStream(new File(filePath));
+            Workbook workbook = new XSSFWorkbook(excelFile);
+            Sheet datatypeSheet = workbook.getSheetAt(0);
+            Iterator<Row> iterator = datatypeSheet.iterator();
+            while (iterator.hasNext())
+            {
+                Row currentRow = iterator.next();
+                Iterator<Cell> cellIterator = currentRow.iterator();
+                int c = 0;
+                double latitude = 0;
+                double longitude = 0;
+                while (cellIterator.hasNext())
+                {
+                    Cell currentCell = cellIterator.next();
+                    if(c == 0)
+                    {
+                        latitude = currentCell.getNumericCellValue();
+                    }
+                    else if(c == 1)
+                    {
+                        longitude = currentCell.getNumericCellValue();
+                    }
+                    ++c;
+                }
+                //System.out.println(latitude + "," + longitude);
+                DriverLocation dl = new DriverLocation();
+                dl.setDriverId("" + recordCounter);
+                dl.setLatitude(latitude);
+                dl.setLongitude(longitude);
+                updateLocation(dl);
+
+                recordCounter++;
+
+            }
+        } catch (Exception e)
+        {
+            logger.error(e.getMessage(), e);
+        }
+        finally
+        {
+            System.out.println(recordCounter + " location records created");
+        }
     }
 
 }
