@@ -1,0 +1,64 @@
+{
+	"variables": [],
+	"info": {
+		"name": "whereismydriver",
+		"_postman_id": "9ee7f23a-0359-32d9-e743-42abeb39801f",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Hello world",
+			"request": {
+				"url": "http://localhost:8080/cabservice/api/v1/",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "search cab",
+			"request": {
+				"url": "http://127.0.0.1:8080/cabservice/api/v1/drivers?longitude=-2.114847768&latitude=57.14416516&radius=1000",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "search taxi"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Location",
+			"request": {
+				"url": "http://127.0.0.1:8080/cabservice/api/v1/drivers/2/location",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"longitude\": 10,\n    \"latitude\":  50\n    \n}"
+				},
+				"description": "update location"
+			},
+			"response": []
+		},
+		{
+			"name": "populate",
+			"request": {
+				"url": "http://localhost:8080/cabservice/api/v1/populate",
+				"method": "POST",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

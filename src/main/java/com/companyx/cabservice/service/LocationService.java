@@ -9,10 +9,12 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.GeoRadiusResponse;
-import redis.clients.jedis.GeoUnit;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.stereotype.Component;
+import redis.clients.jedis.*;
 import redis.clients.jedis.params.geo.GeoRadiusParam;
 
 import java.io.File;
@@ -24,11 +26,19 @@ import java.util.List;
 /**
  * Created by sr250345 on 3/27/17.
  */
+@Component
+@PropertySource("classpath:app.properties")
 public class LocationService {
 
     //Todo - push into config file
     String redisHost = "127.0.0.1";
     Integer redisPort = 6379;
+
+    /*@Value("${redis.host}")
+    String redisHost;
+    @Value("${redis.port}")
+    int redisPort;*/
+
 
     String key = "DriverLocation";
     JedisPool pool = null;
@@ -37,7 +47,10 @@ public class LocationService {
 
     public LocationService()
     {
-        pool = new JedisPool(redisHost, redisPort);
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(128);
+        pool = new JedisPool(poolConfig, redisHost, redisPort);
+        //pool = new JedisPool(redisHost, redisPort);
         logger.info("Connection pool initialized");
     }
     public LocationService(String key)
@@ -165,6 +178,10 @@ public class LocationService {
         {
             System.out.println(recordCounter + " location records created");
         }
+    }
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
+        return new PropertySourcesPlaceholderConfigurer();
     }
 
 }

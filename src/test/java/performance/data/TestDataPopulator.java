@@ -53,7 +53,7 @@ public class TestDataPopulator {
                 dl.setLongitude(longitude);
                 ls.updateLocation(dl);
 
-                recordCounter++;
+                ++recordCounter;
 
             }
         } catch (Exception e)

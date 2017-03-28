@@ -31,9 +31,9 @@ public class PerformanceTester {
     public static void main(String[] args) throws  Exception{
 
         locationService = new LocationService(key);
-        System.out.println(" Initialization complete");
+        System.out.println(" Starting PerformanceTester");
 
-        System.out.println(" Creating test data. 50,000 records");
+        System.out.println(" Creating test data from uk_postalcode_locations.xlsx");
         initData(locationService);
 
         Executor executor   = Executors.newFixedThreadPool(threadCount);
